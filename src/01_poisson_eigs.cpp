@@ -1,5 +1,5 @@
 #include "fd/grid1d.hpp"
-#include "fd/poisson1d/assemble.hpp"
+#include "fd/poisson1d/boundary_condition.hpp"
 #include <Eigen/Eigenvalues>
 #include <cmath>
 #include <iostream>
@@ -8,13 +8,14 @@ using namespace fd;
 using namespace fd::poisson1d;
 
 int main(){
-    const double pi = std::acos(-1.0); 
+    const double pi = std::acos(-1.0);
     const double a = 0.0;
     const double b = 2*pi;
+    DirichletBC bc(0.0, 0.0);
     std::vector<int> Ns = {10, 50, 100, 500, 1000};
     for (const int N : Ns){
         Grid1D grid(a, b, N);
-        Eigen::SparseMatrix<double> A = assembleA(grid);
+        Eigen::SparseMatrix<double> A = bc.assembleA(grid);
         Eigen::MatrixXd dense(A);
         Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver(dense);
         double eig = solver.eigenvalues()(0); //smallest eigenvalue

@@ -1,12 +1,11 @@
-#include "fd/poisson1d/assemble.hpp"
+#include "fd/poisson1d/boundary_condition.hpp"
 #include "fd/grid1d.hpp"
-#include "core/boundary_condition.hpp"
 #include <vector>
-#include <Eigen/Sparse>
-#include <Eigen/Dense>
 
 namespace fd::poisson1d{
-    Eigen::SparseMatrix<double> assembleA(const Grid1D& grid){
+    DirichletBC::DirichletBC(double alpha, double beta) : alpha_(alpha), beta_(beta) {}
+
+    Eigen::SparseMatrix<double> DirichletBC::assembleA(const Grid1D& grid) const{
         const int n = grid.N() - 1; //interior points for N-1 x N-1 matrix
         const double h = grid.h(); //mesh size
         Eigen::SparseMatrix<double> A(n, n);
@@ -26,19 +25,29 @@ namespace fd::poisson1d{
         return A;
     }
 
-    Eigen::VectorXd assembleRHS(const Grid1D& grid, const core::DirichletBC& bc, std::function<double(double)> rho){
+    Eigen::VectorXd DirichletBC::assembleRHS(const Grid1D& grid, std::function<double(double)> rho) const{
         const int n = grid.N() - 1;
         const double h = grid.h();
-        const double alpha = bc.alpha; // left dirichlet BC
-        const double beta = bc.beta; // right dirichlet BC
         const Eigen::VectorXd nodes = grid.nodes();
         Eigen::VectorXd rhs(n);
         for (int i = 0; i<n; i++){
             rhs(i) = rho(nodes(i+1));
-            if(i == 0) rhs(i) += alpha/(h*h);
-            if(i == n-1) rhs(i) += beta/(h*h);
+            if(i == 0) rhs(i) += alpha_/(h*h);
+            if(i == n-1) rhs(i) += beta_/(h*h);
         }
 
         return rhs;
+    }
+
+    Eigen::VectorXd DirichletBC::reconstructSolution(const Grid1D& grid, const Eigen::VectorXd& reduced_sol) const{
+        const int N = grid.N();
+        Eigen::VectorXd sol(N+1);
+        sol(0) = alpha_;
+        sol(N) = beta_;
+        for (int i=1;i<N;i++){
+            sol(i) = reduced_sol(i-1);
+        }
+
+        return sol;
     }
 }

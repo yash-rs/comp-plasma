@@ -1,8 +1,7 @@
 #include "fd/grid1d.hpp"
-#include "fd/poisson1d/assemble.hpp"
-#include "core/boundary_condition.hpp"
+#include "fd/sparse_solve.hpp"
+#include "fd/poisson1d/boundary_condition.hpp"
 #include "core/manufactured_solutions.hpp"
-#include "fd/dirichlet_solve.hpp"
 #include <cmath>
 #include <functional>
 #include <iostream>
@@ -12,7 +11,6 @@
 
 using namespace core;
 using namespace fd;
-using namespace fd::poisson1d;
 
 int main(){
     /* Setup 1d Poisson for a test case and
@@ -26,12 +24,13 @@ int main(){
     // bc values
     const double alpha = phi_fn(a);
     const double beta = phi_fn(b);
-    DirichletBC bc{alpha, beta};
+    poisson1d::DirichletBC bc(alpha, beta);
     const int N = 500;
     const Grid1D grid(a, b, N);
-    Eigen::SparseMatrix<double> A = assembleA(grid);
-    Eigen::VectorXd rhs = assembleRHS(grid, bc, ms.rho);
-    Eigen::VectorXd sol = solveDirichletFD(A, rhs, grid, bc);
+    Eigen::SparseMatrix<double> A = bc.assembleA(grid);
+    Eigen::VectorXd rhs = bc.assembleRHS(grid, rho_fn);
+    Eigen::VectorXd reduced_sol = solveSPD(A, rhs);
+    Eigen::VectorXd sol = bc.reconstructSolution(grid, reduced_sol);
     // exact solution
     Eigen::VectorXd sol_exact(grid.N()+1);
     Eigen::VectorXd nodes = grid.nodes();

@@ -1,3 +1,4 @@
 /build
 /notes
 /data/*.csv
+/compile_commands.json
