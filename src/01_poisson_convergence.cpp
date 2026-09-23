@@ -2,6 +2,7 @@
 #include "fd/poisson1d/boundary_condition.hpp"
 #include "fd/sparse_solve.hpp"
 #include "core/manufactured_solutions.hpp"
+#include "fd/poisson1d/scheme.hpp"
 #include "fd/error_norms.hpp"
 #include <cmath>
 #include <functional>
@@ -29,13 +30,14 @@ int main(){
     const double alpha = phi_fn(a);
     const double beta = phi_fn(b);
     DirichletBC bc(alpha, beta);
+    const SecondOrderScheme scheme;
     std::ofstream file("data/poisson_convergence.csv");
     file << "N,h,l1,l2,linf\n";
     for (const int N : Ns){
         const Grid1D grid(a, b, N);
         const double h = grid.h();
-        Eigen::SparseMatrix<double> A = bc.assembleA(grid);
-        Eigen::VectorXd rhs = bc.assembleRHS(grid, ms.rho);
+        Eigen::SparseMatrix<double> A = bc.assembleA(grid, scheme);
+        Eigen::VectorXd rhs = bc.assembleRHS(grid, scheme, ms.rho);
         Eigen::VectorXd reduced_sol = solveSPD(A, rhs);
         Eigen::VectorXd sol = bc.reconstructSolution(grid, reduced_sol);
         // exact solution

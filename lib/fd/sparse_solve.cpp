@@ -7,4 +7,10 @@ namespace fd {
         solver.compute(A);
         return solver.solve(rhs);
     }
+
+    Eigen::VectorXd solveSparseLU(const Eigen::SparseMatrix<double>& A, const Eigen::VectorXd& rhs){
+        Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
+        solver.compute(A);
+        return solver.solve(rhs);
+    }
 }

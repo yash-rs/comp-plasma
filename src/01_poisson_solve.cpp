@@ -2,6 +2,7 @@
 #include "fd/sparse_solve.hpp"
 #include "fd/poisson1d/boundary_condition.hpp"
 #include "core/manufactured_solutions.hpp"
+#include "fd/poisson1d/scheme.hpp"
 #include <cmath>
 #include <functional>
 #include <iostream>
@@ -27,8 +28,10 @@ int main(){
     poisson1d::DirichletBC bc(alpha, beta);
     const int N = 500;
     const Grid1D grid(a, b, N);
-    Eigen::SparseMatrix<double> A = bc.assembleA(grid);
-    Eigen::VectorXd rhs = bc.assembleRHS(grid, rho_fn);
+    //scheme
+    const poisson1d::SecondOrderScheme scheme;
+    Eigen::SparseMatrix<double> A = bc.assembleA(grid, scheme);
+    Eigen::VectorXd rhs = bc.assembleRHS(grid, scheme, rho_fn);
     Eigen::VectorXd reduced_sol = solveSPD(A, rhs);
     Eigen::VectorXd sol = bc.reconstructSolution(grid, reduced_sol);
     // exact solution

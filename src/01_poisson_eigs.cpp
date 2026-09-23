@@ -1,5 +1,6 @@
 #include "fd/grid1d.hpp"
 #include "fd/poisson1d/boundary_condition.hpp"
+#include "fd/poisson1d/scheme.hpp"
 #include <Eigen/Eigenvalues>
 #include <cmath>
 #include <iostream>
@@ -12,10 +13,11 @@ int main(){
     const double a = 0.0;
     const double b = 2*pi;
     DirichletBC bc(0.0, 0.0);
+    const SecondOrderScheme scheme;
     std::vector<int> Ns = {10, 50, 100, 500, 1000};
     for (const int N : Ns){
         Grid1D grid(a, b, N);
-        Eigen::SparseMatrix<double> A = bc.assembleA(grid);
+        Eigen::SparseMatrix<double> A = bc.assembleA(grid, scheme);
         Eigen::MatrixXd dense(A);
         Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver(dense);
         double eig = solver.eigenvalues()(0); //smallest eigenvalue
