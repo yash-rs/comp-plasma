@@ -15,9 +15,10 @@ find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(FFTW3 REQUIRED IMPORTED_TARGET fftw3)
 
-add_library(core INTERFACE)
-target_include_directories(core INTERFACE ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(core INTERFACE Eigen3::Eigen)
+file(GLOB_RECURSE CORE_SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/lib/core/*.cpp")
+add_library(core STATIC ${CORE_SOURCES})
+target_include_directories(core PUBLIC ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(core PUBLIC Eigen3::Eigen)
 
 file(GLOB_RECURSE FD_SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/lib/fd/*.cpp")
 add_library(fd STATIC ${FD_SOURCES})

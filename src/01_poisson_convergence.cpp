@@ -3,6 +3,7 @@
 #include "fd/sparse_solve.hpp"
 #include "core/manufactured_solutions.hpp"
 #include "fd/poisson1d/scheme.hpp"
+#include "core/convergence.hpp"
 #include "fd/error_norms.hpp"
 #include <cmath>
 #include <functional>
@@ -20,6 +21,7 @@ int main(){
     /* Setup 1d Poisson for a test case and
     compare against manufactured solutions*/
     std::vector<int> Ns = {5, 10, 20, 50, 100, 200, 500, 1000, 2000};
+    int n = Ns.size();
     std::function<double(double)> rho_fn = [](double x){return 2*std::sin(x)+x*std::cos(x);};
     std::function<double(double)> phi_fn = [](double x){return x*std::cos(x);};
     ManufacturedSolution ms{rho_fn, phi_fn};
@@ -31,8 +33,13 @@ int main(){
     const double beta = phi_fn(b);
     DirichletBC bc(alpha, beta);
     const SecondOrderScheme scheme;
+    Eigen::VectorXd H(n);
+    Eigen::VectorXd l1_errs(n);
+    Eigen::VectorXd l2_errs(n);
+    Eigen::VectorXd linf_errs(n);
     std::ofstream file("data/poisson_convergence.csv");
     file << "N,h,l1,l2,linf\n";
+    int j = 0;
     for (const int N : Ns){
         const Grid1D grid(a, b, N);
         const double h = grid.h();
@@ -51,6 +58,15 @@ int main(){
         l2 = l2Norm(sol, sol_exact, grid);
         linf = linfNorm(sol, sol_exact, grid);
         file << N<<","<<h<<","<<l1<<","<<l2<<","<<linf<<"\n";
+        H(j) = h;
+        l1_errs(j) = l1;
+        l2_errs(j) = l2;
+        linf_errs(j) = linf;
+        j++;    
     }
+    double rate_l1 = convergenceRate(H, l1_errs);
+    double rate_l2 = convergenceRate(H, l2_errs);
+    double rate_linf = convergenceRate(H, linf_errs);
+    std::cout << "Convergence rates: L1: " << rate_l1 <<"; L2: " << rate_l2 << "; Linf: " << rate_linf <<"\n";
 
 }
