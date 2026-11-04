@@ -25,6 +25,11 @@ add_library(fd STATIC ${FD_SOURCES})
 target_include_directories(fd PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(fd PUBLIC core PkgConfig::FFTW3)
 
+file(GLOB_RECURSE SPEC_SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/lib/spectral/*.cpp")
+add_library(spectral STATIC ${SPEC_SOURCES})
+target_include_directories(spectral PUBLIC ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(spectral PUBLIC core PkgConfig::FFTW3)
+
 file(GLOB EXPERIMENT_SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/*.cpp")
 
 foreach(src_file ${EXPERIMENT_SOURCES})
