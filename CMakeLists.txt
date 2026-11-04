@@ -23,7 +23,7 @@ target_link_libraries(core PUBLIC Eigen3::Eigen)
 file(GLOB_RECURSE FD_SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/lib/fd/*.cpp")
 add_library(fd STATIC ${FD_SOURCES})
 target_include_directories(fd PUBLIC ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(fd PUBLIC core)
+target_link_libraries(fd PUBLIC core PkgConfig::FFTW3)
 
 file(GLOB EXPERIMENT_SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/*.cpp")
 

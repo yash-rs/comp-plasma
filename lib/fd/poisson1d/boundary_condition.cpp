@@ -5,6 +5,8 @@
 #include <complex>
 #include <utility>
 #include <vector>
+#include <fftw3.h>
+#include <cmath>
 
 namespace fd::poisson1d{
     DirichletBC::DirichletBC(double alpha, double beta) : alpha_(alpha), beta_(beta) {}
@@ -150,7 +152,7 @@ namespace fd::poisson1d{
         double scale = -1 / (h*h);
         std::pair<std::vector<int>, Eigen::VectorXd> res = scheme.intOffsetsAndWeights();
         std::vector<int> o = res.first; // we assume that offsets are symmetric and include 0
-        Eigen::VectorXd w = res.second;
+        Eigen::VectorXd w = scale*res.second;
         Eigen::VectorXd circulants = Eigen::VectorXd::Zero(n);
         int k = o.size();
         for (int i=0;i<k;i++){
@@ -170,5 +172,41 @@ namespace fd::poisson1d{
             }
         }
         return eigs;
+    }
+
+    Eigen::VectorXd PeriodicBC::solveWithDFT(const Grid1D& grid, const GenScheme& scheme, const Eigen::VectorXd& rho_vec)const{
+        const int n = grid.N();
+        std::vector<double> real(n);
+        std::vector<std::complex<double>> spec(n/2+1); // half sprectrum for reals
+        fftw_plan fwd = fftw_plan_dft_r2c_1d(n, real.data(), reinterpret_cast<fftw_complex*>(spec.data()), FFTW_ESTIMATE);
+        fftw_plan bwd = fftw_plan_dft_c2r_1d(n, reinterpret_cast<fftw_complex*>(spec.data()), real.data(), FFTW_ESTIMATE);
+        //forward dft
+        for(int i=0;i<n;i++){
+            real[i] = rho_vec(i);
+        }
+        fftw_execute(fwd);
+        Eigen::VectorXcd eigs = computeEigs(grid, scheme);
+        spec[0] = 0;//set phi_hat0 to 0
+        for(int k=1;k<=n/2;k++){
+            spec[k] /= eigs(k); // solve in fourier space
+        }
+        fftw_execute(bwd);
+        Eigen::VectorXd phi(n);
+        for (int i=0;i<n;i++){
+            phi(i) = real[i]/n; //normalization
+        }
+        fftw_destroy_plan(fwd);
+        fftw_destroy_plan(bwd);
+        return phi;
+    }
+
+    Eigen::VectorXd PeriodicBC::reconstructSolution(const Grid1D& grid, const Eigen::VectorXd& reduced_sol) const{
+        const int n = grid.N()+1;
+        Eigen::VectorXd sol(n);
+        for(int i=0;i<n-1;i++){
+            sol(i) = reduced_sol(i);
+        }
+        sol(n-1) = sol(0);
+        return sol;
     }
 }
